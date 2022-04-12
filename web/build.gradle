@@ -1,0 +1,30 @@
+plugins {
+    id 'war'
+    id 'java'
+}
+
+group 'com.epam.esm'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":service")
+    implementation project(":core")
+    implementation group: 'org.springframework', name: 'spring-webmvc', version: '5.3.18'
+    compileOnly group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.1'
+    implementation group: 'org.springframework', name: 'spring-context', version: '5.3.18'
+    implementation group: 'org.springframework', name: 'spring-core', version: '5.3.18'
+    implementation group: 'org.springframework', name: 'spring-web', version: '5.3.18'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -1,0 +1,6 @@
+rootProject.name = 'bsic_api_module2'
+include 'core'
+include 'service'
+include 'core'
+include 'web'
+
