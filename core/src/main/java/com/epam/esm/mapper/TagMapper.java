@@ -8,12 +8,13 @@ import java.sql.SQLException;
 
 import static com.epam.esm.constant.ColumnName.*;
 
+
 public class TagMapper implements RowMapper<Tag> {
     @Override
     public Tag mapRow(ResultSet rs, int rowNum) throws SQLException {
         return Tag.builder()
-                .id(rs.getLong(TAG_ID))
-                .name(rs.getString(TAG_NAME))
+                .id(rs.getLong(TAG_ID.name()))
+                .name(rs.getString(TAG_NAME.name()))
                 .build();
     }
 }
