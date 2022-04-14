@@ -3,7 +3,9 @@ package com.epam.esm.dao.impl;
 import com.epam.esm.constant.Query;
 import com.epam.esm.dao.TagDao;
 import com.epam.esm.entity.Tag;
+import com.google.protobuf.DescriptorProtos;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.lang.Nullable;
@@ -23,7 +25,7 @@ public class TagDaoImpl implements TagDao {
     private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    public TagDaoImpl( JdbcTemplate jdbcTemplate,RowMapper<Tag> rowMapper) {
+    public TagDaoImpl(JdbcTemplate jdbcTemplate, RowMapper<Tag> rowMapper) {
         this.rowMapper = rowMapper;
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -35,14 +37,22 @@ public class TagDaoImpl implements TagDao {
 
     @Override
     public Optional<Tag> getByName(String value) {
-        final var tag = jdbcTemplate.queryForObject(FIND_TAG_BY_NAME, rowMapper, value);
-        return Optional.ofNullable(tag);
+        try {
+            final var tag = jdbcTemplate.queryForObject(FIND_TAG_BY_NAME, rowMapper, value);
+            return Optional.ofNullable(tag);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
     public Optional<Tag> getById(Long id) {
-        final var tag = jdbcTemplate.queryForObject(FIND_TAG_BY_ID, rowMapper, id);
-        return Optional.ofNullable(tag);
+        try {
+            final var tag = jdbcTemplate.queryForObject(FIND_TAG_BY_ID, rowMapper, id);
+            return Optional.ofNullable(tag);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -67,7 +77,7 @@ public class TagDaoImpl implements TagDao {
         jdbcTemplate.update(UPDATE_TAG_BY_ID, name, id);
     }
 
-    private  <T> T resultCheck(@Nullable T result) {
+    private <T> T resultCheck(@Nullable T result) {
         Assert.state(result != null, "No result");
         return result;
     }

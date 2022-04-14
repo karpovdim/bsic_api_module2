@@ -4,6 +4,7 @@ import com.epam.esm.dao.GiftCertificateDao;
 import com.epam.esm.entity.GiftCertificate;
 import com.epam.esm.util.QueryBuildHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.lang.Nullable;
@@ -29,8 +30,8 @@ public class GiftCertificateDaoImpl implements GiftCertificateDao {
     @Override
     public void create(GiftCertificate giftCertificate) {
         jdbcTemplate.update(CREATE_GIFT_CERTIFICATE, giftCertificate.getName()
-                ,giftCertificate.getDescription(), giftCertificate.getPrice()
-                ,giftCertificate.getDuration());
+                , giftCertificate.getDescription(), giftCertificate.getPrice()
+                , giftCertificate.getDuration());
     }
 
     @Override
@@ -46,14 +47,22 @@ public class GiftCertificateDaoImpl implements GiftCertificateDao {
 
     @Override
     public Optional<GiftCertificate> getById(Long id) {
-        final var giftCertificate = jdbcTemplate.queryForObject(GET_GIFT_CERTIFICATE_BY_ID, rowMapper, id);
-        return Optional.ofNullable(giftCertificate);
+        try {
+            final var giftCertificate = jdbcTemplate.queryForObject(GET_GIFT_CERTIFICATE_BY_ID, rowMapper, id);
+            return Optional.ofNullable(giftCertificate);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
     public Optional<GiftCertificate> getByName(String name) {
-        final var giftCertificate = jdbcTemplate.queryForObject(GET_GIFT_CERTIFICATE_BY_NAME, rowMapper, name);
-        return Optional.ofNullable(giftCertificate);
+        try {
+            final var giftCertificate = jdbcTemplate.queryForObject(GET_GIFT_CERTIFICATE_BY_NAME, rowMapper, name);
+            return Optional.ofNullable(giftCertificate);
+        } catch(EmptyResultDataAccessException e ){
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -91,7 +100,7 @@ public class GiftCertificateDaoImpl implements GiftCertificateDao {
         jdbcTemplate.update(CREATE_GIFT_CERTIFICATE_TAG_REFERENCE, giftCertificateId, tagId);
     }
 
-    private  <T> T resultCheck(@Nullable T result) {
+    private <T> T resultCheck(@Nullable T result) {
         Assert.state(result != null, "No result");
         return result;
     }
