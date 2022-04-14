@@ -6,12 +6,11 @@ import com.epam.esm.util.QueryBuildHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static com.epam.esm.constant.Query.*;
 
@@ -36,7 +35,8 @@ public class GiftCertificateDaoImpl implements GiftCertificateDao {
 
     @Override
     public List<GiftCertificate> getAll() {
-        return jdbcTemplate.query(GET_ALL_GIFT_CERTIFICATES, rowMapper);
+        final var list = jdbcTemplate.query(GET_ALL_GIFT_CERTIFICATES, rowMapper);
+        return resultCheck(list);
     }
 
     @Override
@@ -46,12 +46,14 @@ public class GiftCertificateDaoImpl implements GiftCertificateDao {
 
     @Override
     public Optional<GiftCertificate> getById(Long id) {
-        return jdbcTemplate.query(GET_GIFT_CERTIFICATE_BY_ID, rowMapper, id).stream().findAny();
+        final var giftCertificate = jdbcTemplate.queryForObject(GET_GIFT_CERTIFICATE_BY_ID, rowMapper, id);
+        return Optional.ofNullable(giftCertificate);
     }
 
     @Override
     public Optional<GiftCertificate> getByName(String name) {
-        return jdbcTemplate.query(GET_GIFT_CERTIFICATE_BY_NAME, rowMapper, name).stream().findAny();
+        final var giftCertificate = jdbcTemplate.queryForObject(GET_GIFT_CERTIFICATE_BY_NAME, rowMapper, name);
+        return Optional.ofNullable(giftCertificate);
     }
 
     @Override
@@ -65,24 +67,32 @@ public class GiftCertificateDaoImpl implements GiftCertificateDao {
 
     @Override
     public List<GiftCertificate> getGiftCertificateByTagName(String tagName) {
-        return jdbcTemplate.query(GET_GIFT_CERTIFICATE_BY_TAG_NAME, rowMapper, tagName);
+        final var list = jdbcTemplate.query(GET_GIFT_CERTIFICATE_BY_TAG_NAME, rowMapper, tagName);
+        return resultCheck(list);
     }
 
     @Override
     public List<Long> getTagIdsByGiftCertificateId(Long certificateId) {
-        return jdbcTemplate.query(GET_TAG_IDS_BY_GIFT_CERTIFICATE_ID,
+        final var list = jdbcTemplate.query(GET_TAG_IDS_BY_GIFT_CERTIFICATE_ID,
                 (resultSet, i) -> resultSet.getLong("tag.id"), certificateId);
+        return resultCheck(list);
     }
 
     public List<GiftCertificate> getAllWithSortingAndFiltering(List<String> sortColumns,
                                                                List<String> orderType,
                                                                List<String> filterBy) {
         String query = new QueryBuildHelper().buildSortingQuery(sortColumns, orderType, filterBy);
-        return jdbcTemplate.query(query, rowMapper);
+        final var list = jdbcTemplate.query(query, rowMapper);
+        return resultCheck(list);
     }
 
     @Override
     public void createGiftCertificateTagReference(Long giftCertificateId, Long tagId) {
         jdbcTemplate.update(CREATE_GIFT_CERTIFICATE_TAG_REFERENCE, giftCertificateId, tagId);
+    }
+
+    private  <T> T resultCheck(@Nullable T result) {
+        Assert.state(result != null, "No result");
+        return result;
     }
 }

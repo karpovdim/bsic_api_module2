@@ -1,13 +1,24 @@
 package com.epam.esm.constant;
 
-public final class ColumnName {
-    public static final String TAG_ID = "id";
-    public static final String TAG_NAME = "name";
-    public static final String GIFT_CERTIFICATE_ID = "id";
-    public static final String GIFT_CERTIFICATE_NAME = "name";
-    public static final String GIFT_CERTIFICATE_PRICE = "price";
-    public static final String GIFT_CERTIFICATE_DURATION = "duration";
-    public static final String GIFT_CERTIFICATE_DESCRIPTION = "description";
-    public static final String GIFT_CERTIFICATE_CREATE_TIME = "create_date";
-    public static final String GIFT_CERTIFICATE_LAST_UPDATE_DATE = "last_update_date";
+import lombok.val;
+
+public enum ColumnName {
+    TAG_ID("id"),
+    TAG_NAME("name"),
+    GIFT_CERTIFICATE_ID("id"),
+    GIFT_CERTIFICATE_NAME("name"),
+    GIFT_CERTIFICATE_PRICE("price"),
+    GIFT_CERTIFICATE_DURATION("duration"),
+    GIFT_CERTIFICATE_DESCRIPTION("description"),
+    GIFT_CERTIFICATE_CREATE_TIME("create_date"),
+    GIFT_CERTIFICATE_LAST_UPDATE_DATE("last_update_date");
+    private String value;
+
+    ColumnName(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
 }

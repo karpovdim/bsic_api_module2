@@ -4,7 +4,7 @@ USE `gift_certificates`;
 CREATE TABLE IF NOT EXISTS `gift_certificates`.`gift_certificate`
 (
     `id`               INT            NOT NULL AUTO_INCREMENT,
-    `name`             VARCHAR(90)    NOT NULL,
+    `name`             VARCHAR(90)    UNIQUE NOT NULL,
     `description`      VARCHAR(250)   NOT NULL,
     `price`            DECIMAL(10, 0) NOT NULL,
     `duration`         INT            NOT NULL,
