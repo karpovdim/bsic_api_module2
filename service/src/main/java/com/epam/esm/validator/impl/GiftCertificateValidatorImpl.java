@@ -2,21 +2,29 @@ package com.epam.esm.validator.impl;
 
 import com.epam.esm.entity.GiftCertificate;
 import com.epam.esm.validator.Validator;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+@PropertySource({"classpath:validator.properties"})
 @Component
 public class GiftCertificateValidatorImpl implements Validator<GiftCertificate> {
-
-    private static final int MAX_NAME_LENGTH = 300;
-    private static final int MIN_NAME_LENGTH = 1;
-    private static final int MAX_DESCRIPTION_LENGTH = 300;
-    private static final int MIN_DESCRIPTION_LENGTH = 1;
-    private static final int MIN_DURATION_VALUE = 1;
-    private static final int MAX_DURATION_VALUE = Integer.MAX_VALUE;
     private static final BigDecimal MIN_PRICE_VALUE = BigDecimal.ONE;
     private static final BigDecimal MAX_PRICE_VALUE = new BigDecimal(Integer.MAX_VALUE);
+    @Value("${certificate.maxNameLength}")
+    private int maxNameLength;
+    @Value("${certificate.minNameLength}")
+    private int minNameLength;
+    @Value("${certificate.maxDescriptionLength}")
+    private int maxDescriptionLength;
+    @Value("${certificate.minDescriptionLength}")
+    private  int minDescriptionLength ;
+    @Value("${certificate.minDurationValue}")
+    private  int minDurationValue ;
+    @Value("${certificate.maxDurationValue}")
+    private  int maxDurationValue;
 
     @Override
     public boolean isValid(GiftCertificate giftCertificate) {
@@ -28,14 +36,14 @@ public class GiftCertificateValidatorImpl implements Validator<GiftCertificate> 
 
     public boolean isNameValid(String name) {
         return name != null &&
-                name.length() >= MIN_NAME_LENGTH &&
-                name.length() <= MAX_NAME_LENGTH;
+                name.length() >= minNameLength &&
+                name.length() <= maxNameLength;
     }
 
     public boolean isDescriptionValid(String description) {
         return description != null &&
-                description.length() >= MIN_DESCRIPTION_LENGTH &&
-                description.length() <= MAX_DESCRIPTION_LENGTH;
+                description.length() >= minDescriptionLength &&
+                description.length() <= maxDescriptionLength;
     }
 
     public boolean isPriceValid(BigDecimal price) {
@@ -45,7 +53,7 @@ public class GiftCertificateValidatorImpl implements Validator<GiftCertificate> 
     }
 
     public boolean isDurationValid(Integer duration) {
-        return duration != null && duration >= MIN_DURATION_VALUE;
+        return duration != null && duration >= minDurationValue && duration <= maxDurationValue;
     }
 
 }
