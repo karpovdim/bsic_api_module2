@@ -2,26 +2,28 @@ package com.epam.esm.service.impl;
 
 import com.epam.esm.dao.TagDao;
 import com.epam.esm.entity.Tag;
-import com.epam.esm.exception.DuplicateEntityException;
 import com.epam.esm.exception.InvalidEntityException;
 import com.epam.esm.exception.NoSuchEntityException;
 import com.epam.esm.service.TagService;
-import com.epam.esm.validator.Validator;
+import com.epam.esm.validator.impl.TagValidatorImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.epam.esm.constant.ExceptionMessageConstant.*;
 
 @Service
 public class TagServiceImpl implements TagService {
 
     private final TagDao tagDao;
-    private final Validator<Tag> tagValidator;
+    private final TagValidatorImpl tagValidator;
 
     @Autowired
-    public TagServiceImpl(TagDao tagDao, Validator<Tag> tagValidator) {
+    public TagServiceImpl(TagDao tagDao, TagValidatorImpl tagValidator) {
         this.tagDao = tagDao;
         this.tagValidator = tagValidator;
     }
@@ -42,12 +44,11 @@ public class TagServiceImpl implements TagService {
     @Override
     public List<Tag> getByName(String name) {
         Tag tag = tagDao.getByName(name).orElseThrow(
-                () -> new NoSuchEntityException("message.cantFindTagByName"));
+                () -> new NoSuchEntityException(CANT_FIND_TAG_BY_ID_MSG));
         List<Tag> listOfTags = new ArrayList<>();
         listOfTags.add(tag);
         return listOfTags;
     }
-
 
     @Override
     public List<Tag> getTagsByGiftCertificateId(Long giftCertificateId) {
@@ -57,7 +58,7 @@ public class TagServiceImpl implements TagService {
     @Override
     public List<Tag> getById(Long id) {
         Tag tag = tagDao.getById(id).orElseThrow(
-                () -> new NoSuchEntityException("message.cantFindTagById"));
+                () -> new NoSuchEntityException(CANT_FIND_TAG_BY_NAME_MSG));
         List<Tag> listOfTags = new ArrayList<>();
         listOfTags.add(tag);
         return listOfTags;
@@ -71,42 +72,27 @@ public class TagServiceImpl implements TagService {
     @Transactional
     @Override
     public void create(Tag tag) {
-        if (!tagValidator.isValid(tag)) {
-            throw new InvalidEntityException("message.tagInvalid");
-        }
-        isExists(tag);
+        tagValidator.validate(tag);
+        tagValidator.checkPresenceTagByName(tag, tagDao);
         tagDao.create(tag);
     }
 
     @Transactional
     @Override
     public void updateNameById(Long id, Tag tag) {
-        isPresent(id);
-        if (tag.getName() != null) {
+        tagValidator.checkPresenceTagById(id,tagDao);
+        if (StringUtils.isNotEmpty(tag.getName())) {
             tagDao.updateNameById(id, tag.getName());
         } else {
-            throw new InvalidEntityException("message.tagInvalid");
+            throw new InvalidEntityException(TAG_INVALID_MSG);
         }
     }
 
     @Transactional
     @Override
     public void deleteById(Long id) {
-        isPresent(id);
+        tagValidator.checkPresenceTagById(id, tagDao);
         tagDao.deleteById(id);
     }
 
-    private void isPresent(Long id) {
-        if (tagDao.getById(id).isEmpty()) {
-            throw new NoSuchEntityException("message.tagDoesntExist");
-        }
-    }
-
-    private void isExists(Tag tag) {
-        String tagName = tag.getName();
-        boolean isTagExist = tagDao.getByName(tagName).isPresent();
-        if (isTagExist) {
-            throw new DuplicateEntityException("message.tagExists");
-        }
-    }
 }
