@@ -4,9 +4,7 @@ import com.epam.esm.dao.GiftCertificateDao;
 import com.epam.esm.dao.TagDao;
 import com.epam.esm.entity.GiftCertificate;
 import com.epam.esm.entity.Tag;
-import com.epam.esm.service.GiftCertificateService;
 import com.epam.esm.service.TagService;
-import com.epam.esm.service.impl.GiftCertificateServiceImpl;
 import com.epam.esm.service.impl.TagServiceImpl;
 import com.epam.esm.validator.Validator;
 import com.epam.esm.validator.impl.GiftCertificateValidatorImpl;
@@ -37,12 +35,6 @@ public class ServiceConfig {
     @Bean(name = {"tagValidator"})
     public Validator<Tag> getTagValidator() {
         return new TagValidatorImpl();
-    }
-
-    @Bean(name = "certificateService")
-    public GiftCertificateService getCertificateService(GiftCertificateValidatorImpl certificateValidator,
-                                                        TagValidatorImpl tagValidator) {
-        return new GiftCertificateServiceImpl(certificateDao, tagDao, certificateValidator, tagValidator);
     }
 
     @Bean(name = {"tagService"})
