@@ -6,36 +6,38 @@ import com.epam.esm.dto.GiftCertificateDto;
 import com.epam.esm.entity.GiftCertificate;
 import com.epam.esm.entity.Tag;
 import com.epam.esm.exception.DuplicateEntityException;
-import com.epam.esm.exception.InvalidEntityException;
 import com.epam.esm.exception.NoSuchEntityException;
 import com.epam.esm.service.GiftCertificateService;
-import com.epam.esm.validator.Validator;
 import com.epam.esm.validator.impl.GiftCertificateValidatorImpl;
+import com.epam.esm.validator.impl.TagValidatorImpl;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.epam.esm.constant.ColumnName.*;
+import static com.epam.esm.constant.ExceptionMessageConstant.*;
 
 @Service
 public class GiftCertificateServiceImpl implements GiftCertificateService {
 
-    private final GiftCertificateDao giftCertificateDao;
     private final TagDao tagDao;
+    private final TagValidatorImpl tagValidator;
+    private final GiftCertificateDao giftCertificateDao;
     private final GiftCertificateValidatorImpl giftCertificateValidator;
-    private final Validator<Tag> tagValidator;
 
     @Autowired
     public GiftCertificateServiceImpl(GiftCertificateDao giftCertificateDao, TagDao tagDao,
                                       GiftCertificateValidatorImpl giftCertificateValidator,
-                                      Validator<Tag> tagValidator) {
-        this.giftCertificateDao = giftCertificateDao;
-        this.tagDao = tagDao;
+                                      TagValidatorImpl tagValidator) {
         this.giftCertificateValidator = giftCertificateValidator;
+        this.giftCertificateDao = giftCertificateDao;
         this.tagValidator = tagValidator;
-
+        this.tagDao = tagDao;
     }
 
     @Override
@@ -61,13 +63,11 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
         return giftCertificateList.stream()
                 .map(GiftCertificateDto::new)
                 .collect(Collectors.toList());
-
     }
 
     @Override
     public List<GiftCertificateDto> getById(Long id) {
-        isPresentGiftCertificate(id);
-        GiftCertificate giftCertificate = giftCertificateDao.getById(id).orElseThrow(() -> new NoSuchEntityException("message.notFound"));
+        GiftCertificate giftCertificate = giftCertificateDao.getById(id).orElseThrow(() -> new NoSuchEntityException(NOT_FOUND_MSG));
         List<GiftCertificateDto> listOfGiftCertificate = new ArrayList<>();
         listOfGiftCertificate.add(new GiftCertificateDto(giftCertificate));
         return listOfGiftCertificate;
@@ -77,12 +77,12 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
     @Transactional
     public void create(GiftCertificateDto giftCertificateDto) {
         GiftCertificate giftCertificate = giftCertificateDto.getGiftCertificate();
-        validateGiftCertificate(giftCertificate);
-        validateTags(giftCertificateDto.getCertificateTags());
+        giftCertificateValidator.validateGiftCertificate(giftCertificate);
+        tagValidator.validateTags(giftCertificateDto.getCertificateTags());
         String giftCertificateName = getGiftCertificateName(giftCertificate);
         giftCertificateDao.create(giftCertificate);
         Long giftCertificateId = giftCertificateDao.getByName(giftCertificateName)
-                .map(GiftCertificate::getId).orElseThrow(() -> new NoSuchEntityException("message.notFound"));
+                .map(GiftCertificate::getId).orElseThrow(() -> new NoSuchEntityException(NOT_FOUND_MSG));
         createGiftCertificateTagReference(giftCertificateDto.getCertificateTags(), giftCertificateId);
     }
 
@@ -103,7 +103,7 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
     @Transactional
     @Override
     public void deleteById(Long id) {
-        isPresentGiftCertificate(id);
+        giftCertificateValidator.presenceCheckGiftCertificateById(id, giftCertificateDao);
         giftCertificateDao.deleteById(id);
     }
 
@@ -122,16 +122,11 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
                                                                   List<String> orderType,
                                                                   List<String> filterBy) {
         List<GiftCertificateDto> giftCertificateDtoList = new ArrayList<>();
-        if (sortColumns == null) {
-            sortColumns = Collections.emptyList();
-        }
-        if (orderType == null) {
-            orderType = Collections.emptyList();
-        }
-        if (filterBy == null) {
-            filterBy = Collections.emptyList();
-        }
-        List<GiftCertificate> giftCertificateList = giftCertificateDao.getAllWithSortingAndFiltering(sortColumns, orderType, filterBy);
+        List<String> sortColumnsProcessing = getEmptyListIfListIsNull(sortColumns);
+        List<String> orderTypeProcessing = getEmptyListIfListIsNull(orderType);
+        List<String> filterByProcessing = getEmptyListIfListIsNull(filterBy);
+        List<GiftCertificate> giftCertificateList = giftCertificateDao
+                .getAllWithSortingAndFiltering(sortColumnsProcessing, orderTypeProcessing, filterByProcessing);
         for (GiftCertificate giftCertificate : giftCertificateList) {
             giftCertificateDtoList.add(buildGiftCertificateDto(giftCertificate));
         }
@@ -143,89 +138,59 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
     public GiftCertificateDto updateById(Long giftCertificateId, GiftCertificateDto giftCertificateDto) {
         GiftCertificate giftCertificate = giftCertificateDto.getGiftCertificate();
         List<Tag> tagList = giftCertificateDto.getCertificateTags();
-        if (tagList == null || giftCertificate == null) {
-            throw new InvalidEntityException("message.cantUpdateGiftCertificateById");
-        }
-        isPresentGiftCertificate(giftCertificateId);
+        giftCertificateValidator.checkParamsNotNull(giftCertificate, tagList);
+        giftCertificateValidator.presenceCheckGiftCertificateById(giftCertificateId, giftCertificateDao);
         giftCertificateDao.updateById(giftCertificateId, updateInfo(giftCertificate));
         updateCertificateTags(tagList, giftCertificateId);
-        return buildGiftCertificateDto(giftCertificateDao.getById(giftCertificateId).orElseThrow(() -> new NoSuchEntityException("message.notFound")));
+        return buildGiftCertificateDto(giftCertificateDao.getById(giftCertificateId).orElseThrow(
+                () -> new NoSuchEntityException(NOT_FOUND_MSG)));
     }
+
 
     private Map<String, Object> updateInfo(GiftCertificate giftCertificate) {
         Map<String, Object> updateInfo = new HashMap<>();
-        isValidNameForUpdate(giftCertificate, updateInfo, giftCertificateValidator);
-        isValidDescriptionForUpdate(giftCertificate, updateInfo, giftCertificateValidator);
-        isPriceValidForUpdate(giftCertificate, updateInfo, giftCertificateValidator);
-        isDurationValidForUpdate(giftCertificate, updateInfo, giftCertificateValidator);
+        if (giftCertificateValidator.isValidNameForUpdate(giftCertificate)) {
+            updateInfo.put(GIFT_CERTIFICATE_NAME.getValue(), giftCertificate.getName());
+        }
+        if (giftCertificateValidator.isValidDescriptionForUpdate(giftCertificate)) {
+            updateInfo.put(GIFT_CERTIFICATE_DESCRIPTION.getValue(), giftCertificate.getDescription());
+        }
+        if (giftCertificateValidator.isPriceValidForUpdate(giftCertificate)) {
+            updateInfo.put(GIFT_CERTIFICATE_PRICE.getValue(), giftCertificate.getPrice());
+        }
+        if (giftCertificateValidator.isDurationValidForUpdate(giftCertificate)) {
+            updateInfo.put(GIFT_CERTIFICATE_DURATION.getValue(), giftCertificate.getDuration());
+        }
         return updateInfo;
     }
 
     private String getGiftCertificateName(GiftCertificate giftCertificate) {
         String giftCertificateName = giftCertificate.getName();
-        boolean isCertificateExist = giftCertificateDao.getByName(giftCertificateName).isPresent();
-        if (isCertificateExist) {
-            throw new DuplicateEntityException("message.giftCertificateExists");
-        }
+        giftCertificateDao.getByName(giftCertificateName).orElseThrow(
+                () -> new DuplicateEntityException(GIFT_CERTIFICATE_EXISTS_MSG));
         return giftCertificateName;
     }
 
-    private void isDurationValidForUpdate(GiftCertificate giftCertificate, Map<String, Object> updateInfo, GiftCertificateValidatorImpl giftCertificateValidator) {
-        Integer duration = giftCertificate.getDuration();
-        if (!giftCertificateValidator.isDurationValid(duration)) {
-            throw new InvalidEntityException("message.cantUpdateInvalidDuration");
-        }
-        updateInfo.put("duration", duration);
-    }
-
-    private void isPriceValidForUpdate(GiftCertificate giftCertificate, Map<String, Object> updateInfo, GiftCertificateValidatorImpl giftCertificateValidator) {
-        BigDecimal price = giftCertificate.getPrice();
-        if (price != null) {
-            if (!giftCertificateValidator.isPriceValid(price)) {
-                throw new InvalidEntityException("message.cantUpdateInvalidPrice");
-            }
-            updateInfo.put("price", price);
-        }
-    }
-
-    private void isValidDescriptionForUpdate(GiftCertificate giftCertificate, Map<String, Object> updateInfo, GiftCertificateValidatorImpl giftCertificateValidator) {
-        String description = giftCertificate.getDescription();
-        if (description != null) {
-            if (!giftCertificateValidator.isDescriptionValid(description)) {
-                throw new InvalidEntityException("message.cantUpdateInvalidDescription");
-            }
-            updateInfo.put("description", description);
-        }
-    }
-
-    private void isValidNameForUpdate(GiftCertificate giftCertificate, Map<String, Object> updateInfo, GiftCertificateValidatorImpl giftCertificateValidator) {
-        String name = giftCertificate.getName();
-        if (name != null) {
-            if (!giftCertificateValidator.isNameValid(name)) {
-                throw new InvalidEntityException("message.cantUpdateInvalidName");
-            }
-            updateInfo.put("name", name);
-        }
-    }
-
-    private void isPresentGiftCertificate(Long id) {
-        Optional<GiftCertificate> giftCertificateOptional = giftCertificateDao.getById(id);
-        if (giftCertificateOptional.isEmpty()) {
-            throw new NoSuchEntityException("message.notFound");
-        }
-    }
 
     private void updateCertificateTags(List<Tag> tagList, Long giftCertificateId) {
         for (Tag tag : tagList) {
             String tagName = tag.getName();
-            if (tagName != null) {
+            if (StringUtils.isNotEmpty(tagName)) {
                 Optional<Tag> tagOptional = tagDao.getByName(tagName);
-                Tag fullTag = tagOptional.orElseGet(() -> createGiftCertificateTag(tag));
-                Long tagId = fullTag.getId();
-                if (!giftCertificateDao.getTagIdsByGiftCertificateId(giftCertificateId).contains(tagId)) {
-                    giftCertificateDao.createGiftCertificateTagReference(giftCertificateId, tagId);
-                }
+                Long tagId = createTagIfNotExists(tag, tagOptional);
+                createReferenceIfCertificateNotContainsTag(giftCertificateId, tagId);
             }
+        }
+    }
+
+    private Long createTagIfNotExists(Tag tag, Optional<Tag> tagOptional) {
+        Tag fullTag = tagOptional.orElseGet(() -> createGiftCertificateTag(tag));
+        return fullTag.getId();
+    }
+
+    private void createReferenceIfCertificateNotContainsTag(Long giftCertificateId, Long tagId) {
+        if (!giftCertificateDao.getTagIdsByGiftCertificateId(giftCertificateId).contains(tagId)) {
+            giftCertificateDao.createGiftCertificateTagReference(giftCertificateId, tagId);
         }
     }
 
@@ -240,7 +205,6 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
         return giftCertificateDto;
     }
 
-
     private void createGiftCertificateTagReference(List<Tag> tags, Long giftCertificateId) {
         for (Tag tag : tags) {
             String tagName = tag.getName();
@@ -253,19 +217,15 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
 
     private Tag createGiftCertificateTag(Tag tag) {
         tagDao.create(tag);
-        return tagDao.getByName(tag.getName()).orElseThrow(() -> new NoSuchEntityException("message.notFound"));
+        return tagDao.getByName(tag.getName()).orElseThrow(
+                () -> new NoSuchEntityException(NOT_FOUND_MSG));
     }
 
-    private void validateGiftCertificate(GiftCertificate giftCertificate) {
-        if (!giftCertificateValidator.isValid(giftCertificate)) {
-            throw new InvalidEntityException("message.giftCertificateInvalid");
+    private List<String> getEmptyListIfListIsNull(List<String> list) {
+        if (CollectionUtils.isEmpty(list)) {
+            return Collections.emptyList();
         }
+        return list;
     }
 
-    private void validateTags(List<Tag> tags) {
-        boolean isCorrectTags = tags.stream().allMatch(tagValidator::isValid);
-        if (!isCorrectTags) {
-            throw new InvalidEntityException("message.tagInvalid");
-        }
-    }
 }
