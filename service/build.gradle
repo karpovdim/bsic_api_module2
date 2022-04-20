@@ -10,6 +10,11 @@ repositories {
 
 dependencies {
     implementation project(":core")
+    implementation group: 'org.springframework', name: 'spring-webmvc', version: '5.3.18'
+    implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.0'
+
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
+
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.13.2'
     implementation group: 'org.springframework', name: 'spring-context', version: '5.3.18'
     implementation group: 'org.springframework', name: 'spring-core', version: '5.3.18'
