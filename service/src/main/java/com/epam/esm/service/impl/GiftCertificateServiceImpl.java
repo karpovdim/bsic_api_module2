@@ -174,12 +174,15 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
 
     private void updateCertificateTags(List<Tag> tagList, Long giftCertificateId) {
         for (Tag tag : tagList) {
-            String tagName = tag.getName();
-            if (StringUtils.isNotEmpty(tagName)) {
-                Optional<Tag> tagOptional = tagDao.getByName(tagName);
-                Long tagId = createTagIfNotExists(tag, tagOptional);
-                createReferenceIfCertificateNotContainsTag(giftCertificateId, tagId);
-            }
+            createTagWithReference(giftCertificateId, tag);
+        }
+    }
+
+    private void createTagWithReference(Long giftCertificateId, Tag tag) {
+        if (StringUtils.isNotEmpty(tag.getName())) {
+            Optional<Tag> tagOptional = tagDao.getByName(tag.getName());
+            Long tagId = createTagIfNotExists(tag, tagOptional);
+            createReferenceIfCertificateNotContainsTag(giftCertificateId, tagId);
         }
     }
 
