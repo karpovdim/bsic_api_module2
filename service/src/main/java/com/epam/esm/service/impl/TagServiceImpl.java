@@ -80,12 +80,9 @@ public class TagServiceImpl implements TagService {
     @Transactional
     @Override
     public void updateNameById(Long id, Tag tag) {
+        tagValidator.tagIsEmpty(tag);
         tagValidator.checkPresenceTagById(id,tagDao);
-        if (StringUtils.isNotEmpty(tag.getName())) {
-            tagDao.updateNameById(id, tag.getName());
-        } else {
-            throw new InvalidEntityException(TAG_INVALID_MSG);
-        }
+        tagDao.updateNameById(id, tag.getName());
     }
 
     @Transactional
