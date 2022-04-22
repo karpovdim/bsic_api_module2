@@ -6,6 +6,7 @@ import com.epam.esm.exception.DuplicateEntityException;
 import com.epam.esm.exception.InvalidEntityException;
 import com.epam.esm.exception.NoSuchEntityException;
 import com.epam.esm.validator.Validator;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
@@ -24,13 +25,9 @@ public class TagValidatorImpl implements Validator<Tag> {
 
     @Override
     public boolean isValid(Tag tag) {
-        String tagName = tag.getName();
-        if (tagName != null) {
-            int nameLength = tagName.length();
-            return nameLength >= minNameLength &&
-                    nameLength <= maxNameLength;
-        }
-        return false;
+            return StringUtils.isNotEmpty(tag.getName())
+                    && tag.getName().length() >= minNameLength
+                    && tag.getName().length() <= maxNameLength;
     }
 
     @Override
@@ -46,18 +43,20 @@ public class TagValidatorImpl implements Validator<Tag> {
     }
 
     public void checkPresenceTagByName(Tag tag, TagDao tagDao) {
-        String tagName = tag.getName();
-        tagDao.getByName(tagName).orElseThrow(() -> new DuplicateEntityException(TAG_EXISTS));
+        tagDao.getByName(tag.getName()).orElseThrow(() -> new DuplicateEntityException(TAG_EXISTS));
     }
 
     public void checkPresenceTagById(Long id, TagDao tagDao) {
-        if (tagDao.getById(id).isEmpty()) {
-            throw new NoSuchEntityException(TAG_DOES_NOT_EXISTS);
-        }
+        tagDao.getById(id).orElseThrow(()-> new NoSuchEntityException(TAG_DOES_NOT_EXISTS));
     }
 
     public void validate(Tag tag) {
         if (!isValid(tag)) {
+            throw new InvalidEntityException(TAG_INVALID_MSG);
+        }
+    }
+    public void tagIsEmpty(Tag tag) {
+        if (StringUtils.isEmpty(tag.getName())) {
             throw new InvalidEntityException(TAG_INVALID_MSG);
         }
     }
