@@ -2,16 +2,16 @@ package com.epam.esm.service.impl;
 
 import com.epam.esm.dao.TagDao;
 import com.epam.esm.entity.Tag;
-import com.epam.esm.exception.InvalidEntityException;
 import com.epam.esm.exception.NoSuchEntityException;
 import com.epam.esm.service.TagService;
 import com.epam.esm.validator.impl.TagValidatorImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.epam.esm.constant.ExceptionMessageConstant.*;
@@ -30,15 +30,12 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public List<Tag> getRoute(Long tagId, String tagName, Long giftCertificateId) {
-        if (tagId != null) {
-            return getById(tagId);
-        } else if (tagName != null) {
-            return getByName(tagName);
-        } else if (giftCertificateId != null) {
-            return getTagsByGiftCertificateId(giftCertificateId);
-        } else {
-            return getAll();
-        }
+        List<Tag> tags = new ArrayList<>();
+        tags.addAll(getTagsByParams(tagId));
+        tags.addAll(getTagsByParams(tagName));
+        tags.addAll(getTagsByParams(giftCertificateId));
+        tags.addAll(getTagsByParams(tagId, tagName, giftCertificateId));
+        return tags;
     }
 
     @Override
@@ -90,6 +87,25 @@ public class TagServiceImpl implements TagService {
     public void deleteById(Long id) {
         tagValidator.checkPresenceTagById(id, tagDao);
         tagDao.deleteById(id);
+    }
+
+    private List<Tag> getTagsByParams(Long tagId, String tagName, Long giftCertificateId) {
+        if(tagValidator.allParamsIsNull(tagId,tagName,giftCertificateId)){
+            return getAll();
+        }
+        return Collections.emptyList();
+    }
+    private List<Tag> getTagsByParams(Long id) {
+        if(id == null){
+            return Collections.emptyList();
+        }
+        return getById(id);
+    }
+    private List<Tag> getTagsByParams(String tagName) {
+        if(StringUtils.isEmpty(tagName)){
+            return Collections.emptyList();
+        }
+        return getByName(tagName);
     }
 
 }

@@ -13,10 +13,8 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static com.epam.esm.constant.ColumnName.*;
 import static com.epam.esm.constant.ExceptionMessageConstant.*;
 
 @PropertySource({"classpath:validator.properties"})
@@ -129,7 +127,19 @@ public class GiftCertificateValidatorImpl implements Validator<GiftCertificate> 
         return true;
     }
 
+    public boolean idIsNull(Long id) {
+        return id == null;
+    }
+
+    public boolean sortColumnsAndFilterByIsNull(List<String> sortColumns, List<String> filterBy) {
+        return sortColumns == null && filterBy == null;
+    }
+
     private boolean isListNull(List<Tag> list) {
         return list == null;
+    }
+
+    public boolean allParamsIsNull(String tagName, List<String> sortColumns, List<String> filterBy, Long giftCertificateId, String allWithTags) {
+        return StringUtils.isEmpty(tagName) && sortColumns == null && filterBy == null && giftCertificateId == null && StringUtils.isEmpty(allWithTags);
     }
 }
