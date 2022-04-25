@@ -61,4 +61,7 @@ public class TagValidatorImpl implements Validator<Tag> {
         }
     }
 
+    public boolean allParamsIsNull(Long tagId, String tagName, Long giftCertificateId) {
+        return tagId == null && giftCertificateId == null && StringUtils.isEmpty(tagName);
+    }
 }
