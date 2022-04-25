@@ -138,4 +138,8 @@ public class GiftCertificateValidatorImpl implements Validator<GiftCertificate> 
     private boolean isListNull(List<Tag> list) {
         return list == null;
     }
+
+    public boolean allParamsIsNull(String tagName, List<String> sortColumns, List<String> filterBy, Long giftCertificateId, String allWithTags) {
+        return StringUtils.isEmpty(tagName) && sortColumns == null && filterBy == null && giftCertificateId == null && StringUtils.isEmpty(allWithTags);
+    }
 }
