@@ -11,10 +11,10 @@ import com.epam.esm.service.GiftCertificateService;
 import com.epam.esm.validator.impl.GiftCertificateValidatorImpl;
 import com.epam.esm.validator.impl.TagValidatorImpl;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -44,17 +44,12 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
     public List<GiftCertificateDto> getRoute(String tagName, List<String> sortColumns,
                                              List<String> orderType, List<String> filterBy,
                                              Long giftCertificateId, String allWithTags) {
-        if (giftCertificateId != null) {
-            return getById(giftCertificateId);
-        } else if (sortColumns != null || filterBy != null) {
-            return getAllWithSortingAndFiltering(sortColumns, orderType, filterBy);
-        } else if (tagName != null) {
-            return getAllByTagName(tagName);
-        } else if (allWithTags != null) {
-            return getAllWithTags();
-        } else {
-            return getAll();
-        }
+        List<GiftCertificateDto> certificateDtos = new ArrayList<>();
+        certificateDtos.addAll(getCertificateDtosByParams(giftCertificateId));
+        certificateDtos.addAll(getCertificateDtosByParams(sortColumns, filterBy, orderType));
+        certificateDtos.addAll(getCertificateDtosByParams(tagName));
+        certificateDtos.addAll(getCertificateDtosByAllWithTagsParam(allWithTags));
+        return certificateDtos;
     }
 
     @Override
@@ -98,7 +93,6 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
         }
         return listOfDto;
     }
-
 
     @Transactional
     @Override
@@ -146,22 +140,45 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
                 () -> new NoSuchEntityException(NOT_FOUND_MSG)));
     }
 
-
     private Map<String, Object> updateInfo(GiftCertificate giftCertificate) {
-        Map<String, Object> updateInfo = new HashMap<>();
-        if (giftCertificateValidator.isValidNameForUpdate(giftCertificate)) {
-            updateInfo.put(GIFT_CERTIFICATE_NAME.getValue(), giftCertificate.getName());
-        }
-        if (giftCertificateValidator.isValidDescriptionForUpdate(giftCertificate)) {
-            updateInfo.put(GIFT_CERTIFICATE_DESCRIPTION.getValue(), giftCertificate.getDescription());
-        }
-        if (giftCertificateValidator.isPriceValidForUpdate(giftCertificate)) {
-            updateInfo.put(GIFT_CERTIFICATE_PRICE.getValue(), giftCertificate.getPrice());
-        }
+        Map<String, Object> updateValues = new HashMap<>();
+        updateValues.putAll(getValidNameForUpdate(giftCertificate));
+        updateValues.putAll(getValidDescriptionForUpdate(giftCertificate));
+        updateValues.putAll(getValidPriceForUpdate(giftCertificate));
+        updateValues.putAll(getValidDurationForUpdate(giftCertificate));
+        return updateValues;
+    }
+
+    private Map<String, Object> getValidDurationForUpdate(GiftCertificate giftCertificate) {
+        final var map = new HashMap<String, Object>();
         if (giftCertificateValidator.isDurationValidForUpdate(giftCertificate)) {
-            updateInfo.put(GIFT_CERTIFICATE_DURATION.getValue(), giftCertificate.getDuration());
+            map.put(GIFT_CERTIFICATE_DURATION.getValue(), giftCertificate.getDuration());
         }
-        return updateInfo;
+        return map;
+    }
+
+    private Map<String, Object> getValidPriceForUpdate(GiftCertificate giftCertificate) {
+        final var map = new HashMap<String, Object>();
+        if (giftCertificateValidator.isPriceValidForUpdate(giftCertificate)) {
+            map.put(GIFT_CERTIFICATE_PRICE.getValue(), giftCertificate.getPrice());
+        }
+        return map;
+    }
+
+    private Map<String, Object> getValidDescriptionForUpdate(GiftCertificate giftCertificate) {
+        final var map = new HashMap<String, Object>();
+        if (giftCertificateValidator.isValidDescriptionForUpdate(giftCertificate)) {
+            map.put(GIFT_CERTIFICATE_DESCRIPTION.getValue(), giftCertificate.getDescription());
+        }
+        return map;
+    }
+
+    private Map<String, Object> getValidNameForUpdate(GiftCertificate giftCertificate) {
+        final var map = new HashMap<String, Object>();
+        if (giftCertificateValidator.isValidNameForUpdate(giftCertificate)) {
+            map.put(GIFT_CERTIFICATE_NAME.getValue(), giftCertificate.getName());
+        }
+        return map;
     }
 
     private String getGiftCertificateName(GiftCertificate giftCertificate) {
@@ -171,18 +188,14 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
         return giftCertificateName;
     }
 
-
     private void updateCertificateTags(List<Tag> tagList, Long giftCertificateId) {
         for (Tag tag : tagList) {
-            createTagWithReference(giftCertificateId, tag);
-        }
-    }
-
-    private void createTagWithReference(Long giftCertificateId, Tag tag) {
-        if (StringUtils.isNotEmpty(tag.getName())) {
-            Optional<Tag> tagOptional = tagDao.getByName(tag.getName());
-            Long tagId = createTagIfNotExists(tag, tagOptional);
-            createReferenceIfCertificateNotContainsTag(giftCertificateId, tagId);
+            String tagName = tag.getName();
+            if (StringUtils.isNotEmpty(tagName)) {
+                Optional<Tag> tagOptional = tagDao.getByName(tagName);
+                Long tagId = createTagIfNotExists(tag, tagOptional);
+                createReferenceIfCertificateNotContainsTag(giftCertificateId, tagId);
+            }
         }
     }
 
@@ -231,4 +244,32 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
         return list;
     }
 
+    private List<GiftCertificateDto> getCertificateDtosByAllWithTagsParam(String allWithTags) {
+        if (StringUtils.isEmpty(allWithTags)) {
+            return Collections.emptyList();
+        }
+        return getAllWithTags();
+    }
+
+    private List<GiftCertificateDto> getCertificateDtosByParams(String tagName) {
+        if (StringUtils.isEmpty(tagName)) {
+            return Collections.emptyList();
+        }
+        return getAllByTagName(tagName);
+    }
+
+    private List<GiftCertificateDto> getCertificateDtosByParams(List<String> sortColumns, List<String> filterBy,
+                                                                List<String> orderType) {
+        if (giftCertificateValidator.sortColumnsAndFilterByIsNull(sortColumns, filterBy)) {
+            return Collections.emptyList();
+        }
+        return getAllWithSortingAndFiltering(sortColumns, orderType, filterBy);
+    }
+
+    private List<GiftCertificateDto> getCertificateDtosByParams(Long id) {
+        if (giftCertificateValidator.idIsNull(id)) {
+            return Collections.emptyList();
+        }
+        return getById(id);
+    }
 }
