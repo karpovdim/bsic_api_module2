@@ -14,6 +14,9 @@ repositories {
 dependencies {
     implementation project(":service")
     implementation project(":core")
+    implementation 'au.com.dius.pact.provider:spring:4.3.6'
+
+    testImplementation group: 'com.h2database', name: 'h2', version: '2.1.210'
     implementation group: 'org.springframework', name: 'spring-webmvc', version: '5.3.18'
     compileOnly group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.1'
     implementation group: 'org.springframework', name: 'spring-context', version: '5.3.18'
