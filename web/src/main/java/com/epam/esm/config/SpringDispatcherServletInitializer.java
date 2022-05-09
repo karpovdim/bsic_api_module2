@@ -29,7 +29,7 @@ public class SpringDispatcherServletInitializer extends AbstractAnnotationConfig
     @Override
     public void onStartup(@NotNull ServletContext servletContext) throws ServletException {
         super.onStartup(servletContext);
-        servletContext.setInitParameter("spring.profiles.active", "prod");
+        servletContext.setInitParameter("spring.profiles.active", "dev");
     }
 
     @NotNull
