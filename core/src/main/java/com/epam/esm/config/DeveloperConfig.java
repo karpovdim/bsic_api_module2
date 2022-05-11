@@ -29,10 +29,12 @@ public class DeveloperConfig {
     public JdbcTemplate jdbcTemplate() {
         return new JdbcTemplate(dataSource());
     }
+
     @Bean(name = {"certificateMapper"})
     public GiftCertificateMapper getCertificateMapper() {
         return new GiftCertificateMapper();
     }
+
     @Bean(name = {"tagMapper"})
     public TagMapper getTagMapper() {
         return new TagMapper();

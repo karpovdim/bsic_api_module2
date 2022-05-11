@@ -127,7 +127,7 @@ public class GiftCertificateValidatorImpl implements Validator<GiftCertificate> 
         return true;
     }
 
-    public boolean idIsNull(Long id) {
+    public boolean isIdNull(Long id) {
         return id == null;
     }
 
@@ -139,7 +139,7 @@ public class GiftCertificateValidatorImpl implements Validator<GiftCertificate> 
         return list == null;
     }
 
-    public boolean allParamsIsNull(String tagName, List<String> sortColumns, List<String> filterBy, Long giftCertificateId, String allWithTags) {
+    public boolean isAllParamsNull(String tagName, List<String> sortColumns, List<String> filterBy, Long giftCertificateId, String allWithTags) {
         return StringUtils.isEmpty(tagName) && sortColumns == null && filterBy == null && giftCertificateId == null && StringUtils.isEmpty(allWithTags);
     }
 }
