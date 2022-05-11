@@ -20,8 +20,8 @@ public class DeveloperConfig {
     public DataSource dataSource() {
         return new EmbeddedDatabaseBuilder()
                 .setType(EmbeddedDatabaseType.H2)
-                .addScript("init_db.sql")
-                .addScript("date_init.sql")
+                .addScript("testdb/init_db.sql")
+                .addScript("testdb/date_init.sql")
                 .build();
     }
 
@@ -29,10 +29,12 @@ public class DeveloperConfig {
     public JdbcTemplate jdbcTemplate() {
         return new JdbcTemplate(dataSource());
     }
+
     @Bean(name = {"certificateMapper"})
     public GiftCertificateMapper getCertificateMapper() {
         return new GiftCertificateMapper();
     }
+
     @Bean(name = {"tagMapper"})
     public TagMapper getTagMapper() {
         return new TagMapper();
