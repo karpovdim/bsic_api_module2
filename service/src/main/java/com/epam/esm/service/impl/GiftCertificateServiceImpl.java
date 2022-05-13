@@ -262,7 +262,7 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
     private List<GiftCertificateDto> getCertificateDtosByParams(String tagName, List<String> sortColumns,
                                                                 List<String> filterBy, Long giftCertificateId,
                                                                 String allWithTags) {
-        if (giftCertificateValidator.allParamsIsNull(tagName,sortColumns, filterBy,giftCertificateId,allWithTags)) {
+        if (giftCertificateValidator.isAllParamsNull(tagName,sortColumns, filterBy,giftCertificateId,allWithTags)) {
             return getAll();
         }
         return Collections.emptyList();
@@ -276,7 +276,7 @@ public class GiftCertificateServiceImpl implements GiftCertificateService {
     }
 
     private List<GiftCertificateDto> getCertificateDtosByParams(Long id) {
-        if (giftCertificateValidator.idIsNull(id)) {
+        if (giftCertificateValidator.isIdNull(id)) {
             return Collections.emptyList();
         }
         return getById(id);
